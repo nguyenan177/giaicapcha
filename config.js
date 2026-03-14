@@ -1,4 +1,4 @@
-// config.js — Captcha Solver Pro (minimal, chỉ nút tự động)
+// config.js — Captcha Solver Pro (inline button)
 (function(){
   var APIKEY = "7354dfda0562f14700d36f923868d5e7";
   var API_URL = "https://anticaptcha.top/api/captcha";
@@ -46,146 +46,100 @@
     }
   }
 
-  function findInput(){
-    var sels=[
-      'input[formcontrolname="checkCode"]','input[ng-model*="code"]',
-      'input[name="identifying"]','.nrc-form-input.secure input[type="text"]',
-      'input[name*="captcha"]','input[id*="captcha"]',
-      'input[placeholder*="captcha"]','input[placeholder*="xác minh"]',
-      'input[placeholder*="mã xác"]','input[placeholder*="nhập mã"]',
-      'input[placeholder*="Mã xác"]','input[placeholder*="verification"]'
-    ];
-    for(var i=0;i<sels.length;i++){var e=document.querySelector(sels[i]);if(e)return e;}
-    return Array.from(document.querySelectorAll('input[type="text"],input:not([type])')).find(function(e){
-      var p=(e.placeholder||"").toLowerCase();
-      return (p.includes("nhập")||p.includes("mã"))&&e.maxLength>0&&e.maxLength<=8;
-    })||null;
-  }
-
-  function findImg(){
-    var sels=['img.catchat_pic','img.codeImage','.nrc-form-input.secure img',
-      '#captcha-image','img[src*="captcha"]','img[src*="vcode"]',
-      'img[src*="kaptcha"]','img[class*="captcha"]','img[id*="captcha"]'];
-    for(var i=0;i<sels.length;i++){var e=document.querySelector(sels[i]);if(e)return e;}
-    var inp=findInput();
-    if(inp&&inp.parentElement){var si=inp.parentElement.querySelector('img[src^="data:image"]');if(si)return si;}
-    return Array.from(document.querySelectorAll("img")).find(function(e){
-      var w=e.naturalWidth||e.offsetWidth,h=e.naturalHeight||e.offsetHeight;
-      return w>50&&w<280&&h>20&&h<100;
-    })||null;
-  }
-
-  async function solveGeneric(){
-    var inp=document.querySelector('input[formcontrolname="checkCode"]')||document.querySelector('input[ng-model*="code"]');
-    if(!inp) return{ok:false,msg:"Không tìm thấy input Angular"};
-    await sleep(800);
-    var img=document.querySelector('img[src^="data:image"]');
-    if(!img) return{ok:false,msg:"Không tìm thấy ảnh captcha"};
-    try{var r=await callApi(img.src.split(",")[1],14);await fillInput(inp,r);return{ok:true,result:r};}
-    catch(e){return{ok:false,msg:e.message};}
-  }
-  async function solveQQ88(){
-    var inp=document.querySelector('input[name="identifying"]');
-    var img=document.querySelector("img.catchat_pic");
-    if(!inp||!img) return{ok:false,msg:"Không tìm thấy captcha QQ88"};
-    await sleep(800);
-    try{var r=await callApi(img.src.split(",")[1],14);await fillInput(inp,r);return{ok:true,result:r};}
-    catch(e){return{ok:false,msg:e.message};}
-  }
-  async function solve78Win(){
-    var inp=document.querySelector('.nrc-form-input.secure input[type="text"]');
-    var img=document.querySelector(".nrc-form-input.secure img");
-    if(!inp||!img) return{ok:false,msg:"Không tìm thấy captcha 78Win"};
-    await sleep(800);
-    try{var r=await callApi(img.src.split(",")[1],14);await fillInput(inp,r);return{ok:true,result:r};}
-    catch(e){return{ok:false,msg:e.message};}
-  }
-  async function solveOkvip(){
-    var img=document.querySelector("img.codeImage");
-    if(!img) return{ok:false,msg:"Không tìm thấy captcha OKVip"};
-    await sleep(800);
-    try{
-      var r=await callApi(img.src,14);
-      var inp=document.querySelector("#van-field-3-input");
-      if(!inp) return{ok:false,msg:"Không tìm thấy input OKVip"};
-      await fillInput(inp,r); return{ok:true,result:r};
-    }catch(e){return{ok:false,msg:e.message};}
-  }
-  async function solveSVG(){
-    var inp=document.querySelector("#captcha-input");
-    var img=document.querySelector("#captcha-image");
-    if(!inp||!img) return{ok:false,msg:"Không tìm thấy SVG captcha"};
-    await sleep(800);
-    try{var r=await callApi(img.src,18);await fillInput(inp,r);return{ok:true,result:r};}
-    catch(e){return{ok:false,msg:e.message};}
-  }
-
   async function solveAuto(){
-    if(document.querySelector(".nrc-form-input.secure img")){var r=await solve78Win();r.site="78Win";return r;}
-    if(document.querySelector("img.catchat_pic")){var r=await solveQQ88();r.site="QQ88";return r;}
-    if(document.querySelector("img.codeImage")){var r=await solveOkvip();r.site="OKVip/New88";return r;}
-    if(document.querySelector("#captcha-image")&&document.querySelector("#captcha-input")){var r=await solveSVG();r.site="SVG";return r;}
-    if(document.querySelector('input[formcontrolname="checkCode"]')||document.querySelector('input[ng-model*="code"]')){var r=await solveGeneric();r.site="Angular";return r;}
-    var inp=findInput(),img=findImg();
-    if(inp&&img){
-      await sleep(800);
-      try{
-        var b64=await getBase64(img);
-        if(!b64) return{ok:false,msg:"Không lấy được ảnh"};
-        var res=await callApi(b64); await fillInput(inp,res);
-        return{ok:true,result:res,site:"Generic"};
-      }catch(e){return{ok:false,msg:e.message};}
+    // Ưu tiên input Angular cụ thể
+    var inp = document.querySelector('input[formcontrolname="checkCode"]')
+           || document.querySelector('input[ng-model*="code"]');
+    if(!inp) return {ok:false, msg:"Không tìm thấy input"};
+
+    await sleep(300);
+
+    var img = document.querySelector('img[src^="data:image"]')
+           || document.querySelector('img.codeImage')
+           || document.querySelector('img.catchat_pic')
+           || document.querySelector('#captcha-image')
+           || document.querySelector('img[src*="captcha"]')
+           || document.querySelector('img[src*="kaptcha"]')
+           || document.querySelector('img[src*="vcode"]');
+
+    // Fallback: tìm img gần input nhất
+    if(!img){
+      var parent = inp.closest('form') || inp.parentElement;
+      if(parent) img = parent.querySelector('img');
     }
-    return{ok:false,msg:"Không nhận diện được captcha"};
+    // Fallback cuối: img nhỏ bất kỳ
+    if(!img){
+      img = Array.from(document.querySelectorAll("img")).find(function(e){
+        var w=e.naturalWidth||e.offsetWidth, h=e.naturalHeight||e.offsetHeight;
+        return w>50&&w<280&&h>20&&h<100;
+      });
+    }
+
+    if(!img) return {ok:false, msg:"Không tìm thấy ảnh captcha"};
+
+    try{
+      var b64 = await getBase64(img);
+      if(!b64) return {ok:false, msg:"Không lấy được ảnh"};
+      // Nếu data URL thì tách phần base64
+      var raw = b64.includes(",") ? b64.split(",")[1] : b64;
+      var type = b64.includes("svg+xml") ? 18 : 14;
+      var r = await callApi(raw, type);
+      await fillInput(inp, r);
+      return {ok:true, result:r};
+    }catch(e){
+      return {ok:false, msg:e.message};
+    }
   }
 
-  // ===== CHỈ NÚT DUY NHẤT =====
-  var old=document.getElementById("__csp__");
-  if(old){old.remove(); return;}
+  // ===== CHÈN NÚT NGAY SAU INPUT =====
+  if(document.getElementById("__csp_btn__")) return;
 
-  var P=document.createElement("div");
-  P.id="__csp__";
-  P.style.cssText=
-    "all:initial;display:flex;align-items:center;gap:8px;position:fixed;bottom:16px;left:50%;"+
-    "transform:translateX(-50%);z-index:2147483647;"+
-    "background:#0a0a0f;border:1px solid rgba(0,255,136,0.35);border-radius:999px;"+
-    "padding:8px 16px;box-shadow:0 4px 20px rgba(0,0,0,0.8);font-family:monospace;";
+  var inp = document.querySelector('input[formcontrolname="checkCode"]')
+         || document.querySelector('input[ng-model*="code"]');
+  if(!inp) return;
 
-  var MSG=document.createElement("span");
-  MSG.style.cssText="font-size:11px;color:#888;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;";
-  MSG.textContent="Sẵn sàng";
+  var BTN = document.createElement("button");
+  BTN.id = "__csp_btn__";
+  BTN.type = "button"; // tránh submit form
+  BTN.textContent = "⚡ Tự động nhận diện";
+  BTN.style.cssText =
+    "all:unset;cursor:pointer;margin-left:8px;padding:6px 14px;"+
+    "background:rgba(0,255,136,0.12);border:1px solid rgba(0,255,136,0.5);"+
+    "border-radius:6px;color:#00cc66;font-size:12px;font-weight:bold;"+
+    "font-family:monospace;white-space:nowrap;vertical-align:middle;"+
+    "transition:opacity .2s;";
 
-  var BTN=document.createElement("button");
-  BTN.style.cssText=
-    "all:unset;cursor:pointer;padding:7px 16px;background:rgba(0,255,136,0.13);"+
-    "border:1px solid rgba(0,255,136,0.45);border-radius:999px;"+
-    "color:#00ff88;font-weight:bold;font-size:12px;font-family:monospace;white-space:nowrap;";
-  BTN.textContent="⚡ Tự động nhận diện";
+  BTN.addEventListener("click", async function(){
+    BTN.disabled = true;
+    BTN.textContent = "⏳ Đang giải…";
+    BTN.style.opacity = "0.6";
 
-  var CLOSE=document.createElement("button");
-  CLOSE.style.cssText="all:unset;cursor:pointer;color:#555;font-size:16px;line-height:1;padding:0 2px;";
-  CLOSE.textContent="✕";
-  CLOSE.addEventListener("click",function(){P.remove();});
-
-  BTN.addEventListener("click",async function(){
-    BTN.disabled=true;
-    MSG.style.color="#ffcc00";
-    MSG.textContent="⏳ Đang giải…";
     var result;
-    try{ result=await solveAuto(); }
-    catch(e){ result={ok:false,msg:e.message}; }
-    if(result&&result.ok){
-      MSG.style.color="#00ff88";
-      MSG.textContent="✅"+(result.site?" ["+result.site+"]":"")+" "+result.result;
-    }else{
-      MSG.style.color="#ff3366";
-      MSG.textContent="❌ "+(result&&result.msg?result.msg:"Lỗi");
+    try{ result = await solveAuto(); }
+    catch(e){ result = {ok:false, msg:e.message}; }
+
+    if(result && result.ok){
+      BTN.textContent = "✅ " + result.result;
+      BTN.style.color = "#00cc66";
+      // Reset lại sau 3s
+      setTimeout(function(){
+        BTN.textContent = "⚡ Tự động nhận diện";
+        BTN.style.opacity = "1";
+        BTN.disabled = false;
+      }, 3000);
+    } else {
+      BTN.textContent = "❌ " + (result && result.msg ? result.msg : "Lỗi");
+      BTN.style.color = "#ff4466";
+      setTimeout(function(){
+        BTN.textContent = "⚡ Tự động nhận diện";
+        BTN.style.color = "#00cc66";
+        BTN.style.opacity = "1";
+        BTN.disabled = false;
+      }, 3000);
     }
-    BTN.disabled=false;
   });
 
-  P.appendChild(MSG);
-  P.appendChild(BTN);
-  P.appendChild(CLOSE);
-  document.body.appendChild(P);
+  // Chèn nút ngay sau input trong DOM
+  inp.insertAdjacentElement("afterend", BTN);
+
 })();
