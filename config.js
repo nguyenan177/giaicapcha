@@ -1,6 +1,4 @@
-// config.js — Captcha Solver Pro
-// API key nhúng cứng, không cần tham số
-
+// config.js — Captcha Solver Pro (minimal, chỉ nút tự động)
 (function(){
   var APIKEY = "7354dfda0562f14700d36f923868d5e7";
   var API_URL = "https://anticaptcha.top/api/captcha";
@@ -121,6 +119,7 @@
     try{var r=await callApi(img.src,18);await fillInput(inp,r);return{ok:true,result:r};}
     catch(e){return{ok:false,msg:e.message};}
   }
+
   async function solveAuto(){
     if(document.querySelector(".nrc-form-input.secure img")){var r=await solve78Win();r.site="78Win";return r;}
     if(document.querySelector("img.catchat_pic")){var r=await solveQQ88();r.site="QQ88";return r;}
@@ -140,73 +139,53 @@
     return{ok:false,msg:"Không nhận diện được captcha"};
   }
 
-  // ===== PANEL =====
+  // ===== CHỈ NÚT DUY NHẤT =====
   var old=document.getElementById("__csp__");
   if(old){old.remove(); return;}
 
-  function el(tag,css,txt){var e=document.createElement(tag);if(css)e.style.cssText=css;if(txt)e.textContent=txt;return e;}
-  function btn(txt,css,fn){var b=el("button",css,txt);b.addEventListener("click",fn);return b;}
-
-  var P=el("div",
-    "all:initial;display:block;position:fixed;bottom:0;left:0;right:0;"+
-    "z-index:2147483647;background:#0a0a0f;border-top:2px solid #00ff88;"+
-    "font-family:monospace;padding:12px 14px 30px;box-shadow:0 -8px 32px rgba(0,0,0,0.9);"
-  );
+  var P=document.createElement("div");
   P.id="__csp__";
+  P.style.cssText=
+    "all:initial;display:flex;align-items:center;gap:8px;position:fixed;bottom:16px;left:50%;"+
+    "transform:translateX(-50%);z-index:2147483647;"+
+    "background:#0a0a0f;border:1px solid rgba(0,255,136,0.35);border-radius:999px;"+
+    "padding:8px 16px;box-shadow:0 4px 20px rgba(0,0,0,0.8);font-family:monospace;";
 
-  var H=el("div","display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;");
-  H.appendChild(el("div","color:#00ff88;font-weight:bold;font-size:14px;letter-spacing:1px;","🔓 CAPTCHA SOLVER"));
-  H.appendChild(btn("✕","all:unset;color:#666;font-size:20px;cursor:pointer;padding:0 6px;line-height:1;",function(){P.remove();}));
-  P.appendChild(H);
+  var MSG=document.createElement("span");
+  MSG.style.cssText="font-size:11px;color:#888;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;";
+  MSG.textContent="Sẵn sàng";
 
-  var MSG=el("div",
-    "font-size:11px;color:#888;background:#0d0d14;border-radius:6px;"+
-    "padding:7px 10px;margin-bottom:10px;min-height:32px;line-height:1.5;",
-    "Chọn loại captcha bên dưới…"
-  );
-  P.appendChild(MSG);
-  function setMsg(txt,color){MSG.textContent=txt;MSG.style.color=color||"#888";}
+  var BTN=document.createElement("button");
+  BTN.style.cssText=
+    "all:unset;cursor:pointer;padding:7px 16px;background:rgba(0,255,136,0.13);"+
+    "border:1px solid rgba(0,255,136,0.45);border-radius:999px;"+
+    "color:#00ff88;font-weight:bold;font-size:12px;font-family:monospace;white-space:nowrap;";
+  BTN.textContent="⚡ Tự động nhận diện";
 
-  var G=el("div","display:grid;grid-template-columns:1fr 1fr;gap:7px;");
-  var AB=btn("⚡  TỰ ĐỘNG NHẬN DIỆN",
-    "display:block;width:100%;padding:12px;background:rgba(0,255,136,0.13);"+
-    "border:1px solid rgba(0,255,136,0.4);border-radius:8px;color:#00ff88;"+
-    "font-weight:bold;font-size:13px;cursor:pointer;text-align:center;box-sizing:border-box;",
-    function(){run("auto");}
-  );
-  AB.style.gridColumn="1 / -1";
-  G.appendChild(AB);
+  var CLOSE=document.createElement("button");
+  CLOSE.style.cssText="all:unset;cursor:pointer;color:#555;font-size:16px;line-height:1;padding:0 2px;";
+  CLOSE.textContent="✕";
+  CLOSE.addEventListener("click",function(){P.remove();});
 
-  [["🎯 Angular","generic"],["🃏 QQ88","qq88"],
-   ["🎱 78Win","78win"],["💎 OKVip","okvip"],
-   ["🧩 SVG","svg"],["🔍 Generic","auto"]
-  ].forEach(function(s){
-    var bs="display:block;width:100%;padding:10px 6px;background:#14141f;"+
-      "border:1px solid #1e1e2e;border-radius:8px;color:#e2e2f0;"+
-      "font-size:11px;cursor:pointer;text-align:center;box-sizing:border-box;";
-    G.appendChild(btn(s[0],bs,(function(t){return function(){run(t);};})(s[1])));
+  BTN.addEventListener("click",async function(){
+    BTN.disabled=true;
+    MSG.style.color="#ffcc00";
+    MSG.textContent="⏳ Đang giải…";
+    var result;
+    try{ result=await solveAuto(); }
+    catch(e){ result={ok:false,msg:e.message}; }
+    if(result&&result.ok){
+      MSG.style.color="#00ff88";
+      MSG.textContent="✅"+(result.site?" ["+result.site+"]":"")+" "+result.result;
+    }else{
+      MSG.style.color="#ff3366";
+      MSG.textContent="❌ "+(result&&result.msg?result.msg:"Lỗi");
+    }
+    BTN.disabled=false;
   });
 
-  P.appendChild(G);
+  P.appendChild(MSG);
+  P.appendChild(BTN);
+  P.appendChild(CLOSE);
   document.body.appendChild(P);
-
-  async function run(type){
-    setMsg("⏳ Đang giải ["+type+"]…","#ffcc00");
-    var result;
-    try{
-      if     (type==="auto")    result=await solveAuto();
-      else if(type==="generic") result=await solveGeneric();
-      else if(type==="qq88")    result=await solveQQ88();
-      else if(type==="78win")   result=await solve78Win();
-      else if(type==="okvip")   result=await solveOkvip();
-      else if(type==="svg")     result=await solveSVG();
-      else result={ok:false,msg:"Không rõ loại"};
-    }catch(e){result={ok:false,msg:e.message};}
-    if(result&&result.ok){
-      setMsg("✅"+(result.site?" ["+result.site+"]":"")+" → "+result.result,"#00ff88");
-    }else{
-      setMsg("❌ "+(result&&result.msg?result.msg:"Lỗi không xác định"),"#ff3366");
-    }
-  }
-
 })();
