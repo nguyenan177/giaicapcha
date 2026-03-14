@@ -1,7 +1,10 @@
 // solver.js — Captcha Solver Pro
-// Được fetch() rồi eval() bởi bookmarklet — KHÔNG dùng <script src>
+// Được gọi bởi: new Function('__APIKEY__', code)(key)
+// __APIKEY__ là tham số được truyền trực tiếp từ bookmarklet
 
 (function (APIKEY) {
+  if (!APIKEY) { alert('❌ Chưa có API key! Tạo lại bookmarklet.'); return; }
+
   var API_URL = "https://anticaptcha.top/api/captcha";
 
   function sleep(ms) { return new Promise(function(r){ setTimeout(r,ms); }); }
@@ -30,9 +33,9 @@
   async function callApi(base64, type) {
     type = type || (base64.includes("svg+xml") ? 18 : 14);
     var res = await fetch(API_URL, {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({apikey:APIKEY, type:type, img:base64})
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({apikey: APIKEY, type: type, img: base64})
     });
     var d = await res.json();
     if (d.success && (d.captcha||d.result)) return d.captcha||d.result;
@@ -78,7 +81,7 @@
     var inp=findInput();
     if (inp&&inp.parentElement){
       var si=inp.parentElement.querySelector('img[src^="data:image"]');
-      if(si)return si;
+      if(si) return si;
     }
     return Array.from(document.querySelectorAll("img")).find(function(el){
       var w=el.naturalWidth||el.offsetWidth, h=el.naturalHeight||el.offsetHeight;
@@ -96,6 +99,7 @@
     try{var r=await callApi(img.src.split(",")[1],14);await fillInput(inp,r);return{ok:true,result:r};}
     catch(e){return{ok:false,msg:e.message};}
   }
+
   async function solveQQ88() {
     var inp=document.querySelector('input[name="identifying"]');
     var img=document.querySelector("img.catchat_pic");
@@ -104,6 +108,7 @@
     try{var r=await callApi(img.src.split(",")[1],14);await fillInput(inp,r);return{ok:true,result:r};}
     catch(e){return{ok:false,msg:e.message};}
   }
+
   async function solve78Win() {
     var inp=document.querySelector('.nrc-form-input.secure input[type="text"]');
     var img=document.querySelector(".nrc-form-input.secure img");
@@ -112,6 +117,7 @@
     try{var r=await callApi(img.src.split(",")[1],14);await fillInput(inp,r);return{ok:true,result:r};}
     catch(e){return{ok:false,msg:e.message};}
   }
+
   async function solveOkvip() {
     var img=document.querySelector("img.codeImage");
     if(!img) return{ok:false,msg:"Không tìm thấy captcha OKVip"};
@@ -120,9 +126,10 @@
       var r=await callApi(img.src,14);
       var inp=document.querySelector("#van-field-3-input");
       if(!inp) return{ok:false,msg:"Không tìm thấy input OKVip"};
-      await fillInput(inp,r);return{ok:true,result:r};
+      await fillInput(inp,r); return{ok:true,result:r};
     }catch(e){return{ok:false,msg:e.message};}
   }
+
   async function solveSVG() {
     var inp=document.querySelector("#captcha-input");
     var img=document.querySelector("#captcha-image");
@@ -131,13 +138,14 @@
     try{var r=await callApi(img.src,18);await fillInput(inp,r);return{ok:true,result:r};}
     catch(e){return{ok:false,msg:e.message};}
   }
+
   async function solveAuto() {
     if(document.querySelector(".nrc-form-input.secure img")){var r=await solve78Win();r.site="78Win";return r;}
     if(document.querySelector("img.catchat_pic")){var r=await solveQQ88();r.site="QQ88";return r;}
     if(document.querySelector("img.codeImage")){var r=await solveOkvip();r.site="OKVip/New88";return r;}
     if(document.querySelector("#captcha-image")&&document.querySelector("#captcha-input")){var r=await solveSVG();r.site="SVG";return r;}
     if(document.querySelector('input[formcontrolname="checkCode"]')||document.querySelector('input[ng-model*="code"]')){var r=await solveGeneric();r.site="Angular";return r;}
-    var inp=findInput(),img=findImg();
+    var inp=findInput(), img=findImg();
     if(inp&&img){
       await sleep(800);
       try{
@@ -151,14 +159,14 @@
     return{ok:false,msg:"Không nhận diện được captcha"};
   }
 
-  // ===== BUILD PANEL =====
+  // ===== PANEL =====
   var old=document.getElementById("__csp__");
   if(old){old.remove();return;}
 
   function el(tag,css,txt){
     var e=document.createElement(tag);
-    if(css)e.style.cssText=css;
-    if(txt)e.textContent=txt;
+    if(css) e.style.cssText=css;
+    if(txt) e.textContent=txt;
     return e;
   }
   function btn(txt,css,fn){
@@ -175,13 +183,11 @@
   );
   P.id="__csp__";
 
-  // Header
   var H=el("div","display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;");
-  H.appendChild(el("div","color:#00ff88;font-weight:bold;font-size:14px;","🔓 CAPTCHA SOLVER"));
-  H.appendChild(btn("✕","all:unset;color:#666;font-size:20px;cursor:pointer;padding:0 6px;",function(){P.remove();}));
+  H.appendChild(el("div","color:#00ff88;font-weight:bold;font-size:14px;letter-spacing:1px;","🔓 CAPTCHA SOLVER"));
+  H.appendChild(btn("✕","all:unset;color:#666;font-size:20px;cursor:pointer;padding:0 6px;line-height:1;",function(){P.remove();}));
   P.appendChild(H);
 
-  // Status bar
   var MSG=el("div",
     "font-size:11px;color:#666;background:#0d0d14;border-radius:6px;"+
     "padding:7px 10px;margin-bottom:10px;min-height:32px;line-height:1.5;",
@@ -191,10 +197,8 @@
 
   function setMsg(txt,color){MSG.textContent=txt;MSG.style.color=color||"#666";}
 
-  // Grid
   var G=el("div","display:grid;grid-template-columns:1fr 1fr;gap:7px;");
 
-  // Auto button full width
   var AB=btn("⚡  TỰ ĐỘNG NHẬN DIỆN",
     "display:block;width:100%;padding:12px;background:rgba(0,255,136,0.13);"+
     "border:1px solid rgba(0,255,136,0.4);border-radius:8px;color:#00ff88;"+
@@ -204,7 +208,6 @@
   AB.style.gridColumn="1 / -1";
   G.appendChild(AB);
 
-  // Site buttons
   var SITES=[
     ["🎯 Angular","generic"],["🃏 QQ88","qq88"],
     ["🎱 78Win","78win"],["💎 OKVip","okvip"],
@@ -224,7 +227,7 @@
     setMsg("⏳ Đang giải ["+type+"]…","#ffcc00");
     var result;
     try{
-      if(type==="auto")         result=await solveAuto();
+      if     (type==="auto")    result=await solveAuto();
       else if(type==="generic") result=await solveGeneric();
       else if(type==="qq88")    result=await solveQQ88();
       else if(type==="78win")   result=await solve78Win();
@@ -232,6 +235,7 @@
       else if(type==="svg")     result=await solveSVG();
       else result={ok:false,msg:"Không rõ loại"};
     }catch(e){result={ok:false,msg:e.message};}
+
     if(result&&result.ok){
       setMsg("✅"+(result.site?" ["+result.site+"]":"")+" → "+result.result,"#00ff88");
     } else {
@@ -239,4 +243,4 @@
     }
   }
 
-})(window.__CSP_APIKEY__||"");
+})(__APIKEY__);
